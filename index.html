@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-white">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian — Stakeholder Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fb;
+    --bg-tertiary: #f1f3f7;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --border-primary: #e2e8f0;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --sidebar-width: 240px;
+    --success: #16a34a;
+    --warning: #ca8a04;
+    --danger: #dc2626;
+  }
+  * { font-family: 'Inter', system-ui, sans-serif; }
+  body { background: var(--bg-secondary); color: var(--text-primary); }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .page { display: none; }
+  .page.active { display: flex; }
+  .sidebar-link { transition: all 0.15s ease; }
+  .sidebar-link:hover { background: #f1f5f9; }
+  .sidebar-link.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .sidebar-link.active svg { color: var(--accent); }
+  .card { background: white; border: 1px solid var(--border-primary); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card-hover { transition: box-shadow 0.15s ease, border-color 0.15s ease; cursor: pointer; }
+  .card-hover:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+  .stat-card { background: white; border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px 24px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+  .badge-green { background: #f0fdf4; color: #166534; }
+  .badge-blue { background: #eff6ff; color: #1e40af; }
+  .badge-red { background: #fef2f2; color: #991b1b; }
+  .badge-gray { background: #f8fafc; color: #475569; }
+  .badge-purple { background: #faf5ff; color: #6b21a8; }
+  .badge-amber { background: #fffbeb; color: #92400e; }
+  .badge-indigo { background: #eef2ff; color: #3730a3; }
+  .badge-yellow { background: #fefce8; color: #854d0e; }
+  .btn-primary { background: var(--accent); color: white; border-radius: 8px; padding: 10px 20px; font-weight: 500; font-size: 14px; transition: background 0.15s; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-secondary { background: white; color: var(--text-primary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 10px 20px; font-weight: 500; font-size: 14px; transition: all 0.15s; }
+  .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+  .pill { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; background: #f1f5f9; color: #475569; }
+  .toggle { width: 40px; height: 22px; background: #cbd5e1; border-radius: 99px; position: relative; cursor: pointer; transition: background 0.2s; }
+  .toggle.active { background: var(--accent); }
+  .toggle::after { content: ''; width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  .toggle.active::after { transform: translateX(18px); }
+  .tab-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .tr-row { transition: background 0.1s; cursor: pointer; }
+  .tr-row:hover { background: #f8fafc; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0 !important; } }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ═══════════════ LOGIN PAGE ═══════════════ -->
+<div id="page-login" class="page active min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/40">
+  <div class="w-full max-w-md px-6">
+    <div class="card p-10">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#2563eb] text-white font-bold text-lg mb-3">M</div>
+        <h1 class="text-2xl font-bold text-slate-900">Meridian</h1>
+        <p class="text-sm text-slate-500 mt-1">Stakeholder Intelligence</p>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+          <input id="login-email" type="email" value="demo@meridian.app" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition" placeholder="you@company.com">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+          <input id="login-password" type="password" value="demo1234" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition" placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn-primary w-full text-center justify-center">Sign in</button>
+      </form>
+      <p class="text-center text-sm text-slate-500 mt-5">Don't have an account? <a href="#" onclick="navigate('login')" class="text-[#2563eb] font-medium hover:underline">Create account</a></p>
+      <p class="text-center text-xs text-slate-400 mt-4">Demo: demo@meridian.app / demo1234</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP SHELL (all other pages) ═══════════════ -->
+<div id="page-app" class="page min-h-screen" style="display:none;">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar fixed left-0 top-0 bottom-0 w-[240px] bg-white border-r border-slate-200 flex flex-col z-10">
+    <div class="px-5 py-5 border-b border-slate-100">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-[#2563eb] flex items-center justify-center text-white font-bold text-sm">M</div>
+        <span class="font-semibold text-slate-900">Meridian</span>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-0.5">
+      <a href="#dashboard" class="sidebar-link active flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600" data-page="dashboard">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#stakeholders" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600" data-page="stakeholders">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M1 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/><circle cx="17" cy="10" r="3"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+        Stakeholders
+      </a>
+      <a href="#alerts" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600" data-page="alerts">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Alerts
+      </a>
+      <a href="#settings" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600" data-page="settings">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="px-5 py-4 border-t border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600">DU</div>
+        <div>
+          <p class="text-sm font-medium text-slate-900">Demo User</p>
+          <p class="text-xs text-slate-400">demo@meridian.app</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content ml-[240px] flex-1">
+
+    <!-- ═══════════════ DASHBOARD ═══════════════ -->
+    <div id="page-dashboard" class="page-content p-8" style="display:none;">
+      <div class="max-w-[1100px] mx-auto">
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Welcome back, Demo User</h1>
+        <p class="text-sm text-slate-500 mb-8">Here's what's happening with your stakeholders today.</p>
+
+        <!-- Stat cards -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+          <div class="stat-card">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Total Stakeholders</p>
+            <p class="text-2xl font-bold text-slate-900">5</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Active Alerts</p>
+            <p class="text-2xl font-bold text-slate-900">3</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Last Enrichment</p>
+            <p class="text-2xl font-bold text-slate-900">2 hrs ago</p>
+          </div>
+          <div class="stat-card">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Alerts This Week</p>
+            <p class="text-2xl font-bold text-slate-900">12</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Recent Stakeholders -->
+          <div class="card p-5" id="dash-stakeholders-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-semibold text-slate-900">Recent Stakeholders</h2>
+              <a href="#stakeholders" class="text-xs font-medium text-[#2563eb] hover:underline" onclick="navigate('stakeholders')">View all →</a>
+            </div>
+            <div class="space-y-2" id="dash-stakeholders-list"></div>
+          </div>
+          <!-- Recent Alerts -->
+          <div class="card p-5" id="dash-alerts-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-semibold text-slate-900">Recent Alerts</h2>
+              <a href="#alerts" class="text-xs font-medium text-[#2563eb] hover:underline" onclick="navigate('alerts')">View all →</a>
+            </div>
+            <div class="space-y-2" id="dash-alerts-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ STAKEHOLDERS LIST ═══════════════ -->
+    <div id="page-stakeholders" class="page-content p-8" style="display:none;">
+      <div class="max-w-[1100px] mx-auto">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Stakeholders</h1>
+            <p class="text-sm text-slate-500 mt-0.5">5 stakeholders tracked across 5 jurisdictions</p>
+          </div>
+          <button class="btn-primary" onclick="alert('Add stakeholder form would open here.')">+ Add Stakeholder</button>
+        </div>
+        <div class="mb-4">
+          <input id="search-stakeholders" type="text" placeholder="Search stakeholders..." class="w-full max-w-sm px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" onkeyup="filterStakeholders()">
+        </div>
+        <div class="card overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-100 bg-slate-50/50">
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Title</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Organization</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Jurisdiction</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Stance</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody id="stakeholder-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ STAKEHOLDER DETAIL ═══════════════ -->
+    <div id="page-stakeholder-detail" class="page-content p-8" style="display:none;">
+      <div class="max-w-[1100px] mx-auto">
+        <button class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-5" onclick="navigate('stakeholders')">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>
+          Back to Stakeholders
+        </button>
+
+        <!-- Stakeholder Info Card -->
+        <div class="card p-6 mb-6" id="detail-card"></div>
+
+        <!-- Tabs -->
+        <div class="flex gap-0 border-b border-slate-200 mb-5" id="detail-tabs">
+          <button class="tab-btn active" onclick="switchTab('news')">News Mentions</button>
+          <button class="tab-btn" onclick="switchTab('statements')">Public Statements</button>
+          <button class="tab-btn" onclick="switchTab('regulatory')">Regulatory Positions</button>
+          <button class="tab-btn" onclick="switchTab('appointments')">Recent Appointments</button>
+        </div>
+
+        <!-- Enrich button -->
+        <div class="mb-5">
+          <button id="enrich-btn" class="btn-secondary flex items-center gap-2" onclick="enrichStakeholder()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Enrich Data
+          </button>
+          <span id="enrich-status" class="text-xs text-slate-400 ml-3 hidden"></span>
+        </div>
+
+        <!-- Tab contents -->
+        <div id="tab-news" class="tab-content active space-y-2"></div>
+        <div id="tab-statements" class="tab-content space-y-2" style="display:none;"></div>
+        <div id="tab-regulatory" class="tab-content space-y-2" style="display:none;"></div>
+        <div id="tab-appointments" class="tab-content space-y-2" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ALERTS ═══════════════ -->
+    <div id="page-alerts" class="page-content p-8" style="display:none;">
+      <div class="max-w-[1100px] mx-auto">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Alerts</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Monitor changes across your stakeholders</p>
+          </div>
+          <button class="btn-primary" onclick="alert('Create alert form would open here.')">+ Create Alert</button>
+        </div>
+        <div class="grid grid-cols-2 gap-4" id="alerts-grid"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ SETTINGS ═══════════════ -->
+    <div id="page-settings" class="page-content p-8" style="display:none;">
+      <div class="max-w-[700px] mx-auto">
+        <h1 class="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
+
+        <!-- Profile -->
+        <div class="card p-6 mb-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Profile</h2>
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-lg font-semibold text-slate-600">DU</div>
+            <div>
+              <p class="font-semibold text-slate-900">Demo User</p>
+              <p class="text-sm text-slate-500">demo@meridian.app</p>
+            </div>
+            <span class="badge badge-purple ml-auto">Admin</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Name</label>
+              <input type="text" value="Demo User" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Email</label>
+              <input type="email" value="demo@meridian.app" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Organization -->
+        <div class="card p-6 mb-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Organization</h2>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Name</span><span class="font-medium">Acme Regulatory Affairs</span></div>
+            <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Plan</span><span class="font-medium">Enterprise</span></div>
+            <div class="flex justify-between py-2"><span class="text-slate-500">Members</span><span class="font-medium">8</span></div>
+          </div>
+        </div>
+
+        <!-- Alert Channels -->
+        <div class="card p-6 mb-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Alert Channels</h2>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Slack Webhook URL</label>
+              <input type="text" value="https://hooks.slack.com/services/..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none font-mono text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Teams Webhook URL</label>
+              <input type="text" value="https://outlook.office.com/webhook/..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none font-mono text-xs">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary">Save Changes</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script>
+// ── Mock Data ──────────────────────────────
+const stakeholders = [
+  { id:1, name:'María Elena García', title:'Director of Financial Innovation', org:'Banco Central de Argentina', country:'AR', flag:'🇦🇷', stance:'Supportive', status:'AI Enriched', bio:'Leads digital currency initiatives at BCRA. Previously served as Deputy Director of Payments Systems. Holds a PhD in Economics from Universidad de Buenos Aires.', sectors:['CBDC','Payments','Financial Regulation'], enriched:true },
+  { id:2, name:'Carlos Mendes Silva', title:'Head of Digital Assets', org:'CVM', country:'BR', flag:'🇧🇷', stance:'Supportive', status:'AI Enriched', bio:'Oversees digital asset regulation at the Brazilian Securities Commission. Former fintech founder with deep technical expertise in blockchain infrastructure.', sectors:['Digital Assets','Securities','FinTech'], enriched:true },
+  { id:3, name:'Alejandra Ruiz', title:'Senator, FinTech Subcommittee', org:'Senado de México', country:'MX', flag:'🇲🇽', stance:'Neutral', status:'Manual', bio:'Member of the Senate FinTech Subcommittee. Has expressed cautious optimism about crypto regulation. Background in consumer protection law.', sectors:['Legislation','Consumer Protection','FinTech'], enriched:false },
+  { id:4, name:'Daniel Ortega', title:'Superintendent', org:'Superintendencia Financiera de Colombia', country:'CO', flag:'🇨🇴', stance:'Neutral', status:'AI Enriched', bio:'Superintendent of Colombia\'s financial regulator. Focused on risk management frameworks for digital assets. Previously at the IMF.', sectors:['Risk Management','Banking','Digital Assets'], enriched:true },
+  { id:5, name:'Sarah Chen', title:'Commissioner', org:'U.S. SEC', country:'US', flag:'🇺🇸', stance:'Hostile', status:'AI Enriched', bio:'SEC Commissioner with a strong enforcement-focused approach to crypto. Former federal prosecutor. Known for dissenting on crypto-friendly ETF approvals.', sectors:['Securities','Enforcement','Crypto Regulation'], enriched:true },
+];
+
+const alerts = [
+  { id:1, name:'Argentina CBDC News', channel:'Slack', frequency:'Daily', keywords:['CBDC','Argentina','Banco Central crypto','digital peso'], active:true, lastTriggered:'2 hours ago' },
+  { id:2, name:'Brazil CVM Regulations', channel:'Email', frequency:'Weekly', keywords:['CVM crypto','Brazil digital assets','token regulation'], active:true, lastTriggered:'1 day ago' },
+  { id:3, name:'US SEC Enforcement', channel:'Slack', frequency:'Daily', keywords:['SEC crypto enforcement','Wells notice','crypto lawsuit'], active:true, lastTriggered:'3 hours ago' },
+];
+
+const enrichmentData = {
+  news: [
+    { date:'2026-05-20', title:'Central Bank Digital Currency Pilot Expands to Phase 2', source:'Reuters', snippet:'The regulator announced the expansion of its CBDC pilot program, adding three major commercial banks to the testing phase.' },
+    { date:'2026-05-15', title:'New FinTech Regulatory Sandbox Announced', source:'Bloomberg', snippet:'Financial regulators unveiled a new sandbox framework aimed at fostering innovation while maintaining consumer protections.' },
+    { date:'2026-05-10', title:'Digital Asset Framework Receives Industry Feedback', source:'Financial Times', snippet:'Industry stakeholders submitted comments on proposed digital asset regulations, with broad support for licensing provisions.' },
+  ],
+  statements: [
+    { date:'2026-05-18', title:'Remarks at FinTech Summit 2026', context:'Keynote address', snippet:'"We believe in fostering innovation while ensuring robust consumer protections. The balance is critical."' },
+    { date:'2026-04-22', title:'Congressional Testimony on Digital Assets', context:'Senate Hearing', snippet:'Provided written and oral testimony on the regulatory approach to emerging digital asset technologies.' },
+  ],
+  regulatory: [
+    { date:'2026-05-01', title:'Proposed Rule: Digital Asset Service Providers', status:'Under Review', snippet:'New licensing requirements for digital asset service providers, including capital adequacy and consumer protection measures.' },
+    { date:'2026-03-15', title:'Consultation Paper: Stablecoin Framework', status:'Comment Period Closed', snippet:'Sought public comment on proposed stablecoin reserve requirements and operational standards.' },
+  ],
+  appointments: [
+    { date:'2026-04-10', title:'Appointed to FinTech Advisory Board', detail:'Named to the newly formed FinTech Advisory Board, which will guide digital asset policy development.' },
+    { date:'2025-11-20', title:'Confirmed to Current Position', detail:'Confirmed by the relevant governing body to current regulatory leadership role.' },
+  ],
+};
+
+// ── Helpers ────────────────────────────────
+function stanceBadgeClass(stance) {
+  const map = { Supportive:'badge-green', Neutral:'badge-blue', Hostile:'badge-red', Unknown:'badge-gray' };
+  return map[stance] || 'badge-gray';
+}
+
+function statusBadgeClass(status) {
+  return status === 'AI Enriched' ? 'badge-purple' : 'badge-yellow';
+}
+
+function channelBadgeClass(channel) {
+  const map = { Slack:'badge-purple', Teams:'badge-indigo', Email:'badge-amber' };
+  return map[channel] || 'badge-gray';
+}
+
+function freqBadgeClass(freq) {
+  const map = { Realtime:'badge-green', Daily:'badge-blue', Weekly:'badge-gray' };
+  return map[freq] || 'badge-gray';
+}
+
+// ── Routing ────────────────────────────────
+let currentPage = 'login';
+let currentDetailId = null;
+
+function navigate(page, data) {
+  currentPage = page;
+
+  // Login page is special
+  const loginPage = document.getElementById('page-login');
+  const appPage = document.getElementById('page-app');
+
+  if (page === 'login') {
+    loginPage.style.display = 'flex';
+    loginPage.classList.add('active');
+    appPage.style.display = 'none';
+    appPage.classList.remove('active');
+    return;
+  }
+
+  // App pages
+  loginPage.style.display = 'none';
+  loginPage.classList.remove('active');
+  appPage.style.display = 'flex';
+  appPage.classList.add('active');
+
+  // Hide all page-content divs
+  document.querySelectorAll('.page-content').forEach(el => el.style.display = 'none');
+
+  // Show target
+  const targetMap = {
+    dashboard: 'page-dashboard',
+    stakeholders: 'page-stakeholders',
+    alerts: 'page-alerts',
+    settings: 'page-settings',
+  };
+
+  const targetId = targetMap[page];
+  if (targetId) {
+    const target = document.getElementById(targetId);
+    if (target) target.style.display = 'block';
+  }
+
+  // Stakeholder detail
+  if (page === 'stakeholder-detail' && data) {
+    const detailPage = document.getElementById('page-stakeholder-detail');
+    if (detailPage) detailPage.style.display = 'block';
+    currentDetailId = data;
+    renderStakeholderDetail(data);
+  }
+
+  // Update sidebar links
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    const linkPage = link.getAttribute('data-page');
+    link.classList.toggle('active', linkPage === page || (page === 'stakeholder-detail' && linkPage === 'stakeholders'));
+  });
+
+  // Render lists if needed
+  if (page === 'stakeholders') renderStakeholdersList();
+  if (page === 'alerts') renderAlertsGrid();
+  if (page === 'dashboard') renderDashboard();
+
+  // Update hash
+  window.location.hash = '#' + page;
+}
+
+function renderDashboard() {
+  // Render recent stakeholders
+  const stakeList = document.getElementById('dash-stakeholders-list');
+  if (stakeList) {
+    stakeList.innerHTML = stakeholders.map(s => `
+      <div class="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 cursor-pointer card-hover px-1 rounded" onclick="navigate('stakeholder-detail', ${s.id})">
+        <div><p class="text-sm font-medium text-slate-900">${s.name}</p><p class="text-xs text-slate-400">${s.title} · ${s.org}</p></div>
+        <span class="badge ${stanceBadgeClass(s.stance)}">${s.stance}</span>
+      </div>
+    `).join('');
+  }
+
+  // Render recent alerts
+  const alertList = document.getElementById('dash-alerts-list');
+  if (alertList) {
+    alertList.innerHTML = alerts.map(a => `
+      <div class="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
+        <div><p class="text-sm font-medium text-slate-900">${a.name}</p><p class="text-xs text-slate-400">${a.lastTriggered}</p></div>
+        <span class="badge ${channelBadgeClass(a.channel)}">${a.channel}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function renderStakeholdersList(filter) {
+  const tbody = document.getElementById('stakeholder-tbody');
+  if (!tbody) return;
+  const search = (filter || document.getElementById('search-stakeholders')?.value || '').toLowerCase();
+  const filtered = stakeholders.filter(s =>
+    !search || s.name.toLowerCase().includes(search) || s.org.toLowerCase().includes(search) || s.title.toLowerCase().includes(search)
+  );
+  tbody.innerHTML = filtered.map(s => `
+    <tr class="tr-row border-b border-slate-50 last:border-0" onclick="navigate('stakeholder-detail', ${s.id})">
+      <td class="px-5 py-3.5"><span class="font-medium text-slate-900">${s.name}</span></td>
+      <td class="px-5 py-3.5 text-slate-600">${s.title}</td>
+      <td class="px-5 py-3.5 text-slate-600">${s.org}</td>
+      <td class="px-5 py-3.5"><span class="text-lg">${s.flag}</span> <span class="text-xs text-slate-400 ml-1">${s.country}</span></td>
+      <td class="px-5 py-3.5"><span class="badge ${stanceBadgeClass(s.stance)}">${s.stance}</span></td>
+      <td class="px-5 py-3.5"><span class="badge ${statusBadgeClass(s.status)}">${s.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+function filterStakeholders() {
+  renderStakeholdersList();
+}
+
+function renderStakeholderDetail(id) {
+  const s = stakeholders.find(x => x.id === id);
+  if (!s) return;
+
+  // Info card
+  const card = document.getElementById('detail-card');
+  card.innerHTML = `
+    <div class="flex items-start justify-between">
+      <div class="flex items-start gap-4">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xl font-bold">${s.name.split(' ').map(n=>n[0]).join('')}</div>
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">${s.name}</h2>
+          <p class="text-sm text-slate-600 mt-0.5">${s.title}</p>
+          <p class="text-sm text-slate-500">${s.org} <span class="text-lg ml-1">${s.flag}</span></p>
+          <div class="flex gap-2 mt-3">
+            ${s.sectors.map(sec => `<span class="pill">${sec}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="text-right">
+        <span class="badge ${stanceBadgeClass(s.stance)} text-sm px-3 py-1">${s.stance}</span>
+        <p class="text-xs text-slate-400 mt-2"><span class="badge ${statusBadgeClass(s.status)}">${s.status}</span></p>
+      </div>
+    </div>
+    <div class="mt-4 pt-4 border-t border-slate-100">
+      <p class="text-sm text-slate-600 leading-relaxed">${s.bio}</p>
+    </div>
+  `;
+
+  // Populate tabs
+  populateTab('tab-news', enrichmentData.news, true);
+  populateTab('tab-statements', enrichmentData.statements, false);
+  populateTab('tab-regulatory', enrichmentData.regulatory, false);
+  populateTab('tab-appointments', enrichmentData.appointments, false);
+
+  // Reset tabs
+  document.querySelectorAll('#detail-tabs .tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === 0));
+  document.querySelectorAll('.tab-content').forEach(el => { el.style.display = 'none'; el.classList.remove('active'); });
+  const tabNews = document.getElementById('tab-news');
+  if (tabNews) { tabNews.style.display = 'block'; tabNews.classList.add('active'); }
+
+  // Reset enrich button
+  const enrichBtn = document.getElementById('enrich-btn');
+  const enrichStatus = document.getElementById('enrich-status');
+  if (enrichBtn) enrichBtn.disabled = false;
+  if (enrichStatus) { enrichStatus.classList.add('hidden'); enrichStatus.textContent = ''; }
+}
+
+function populateTab(tabId, items, isNews) {
+  const container = document.getElementById(tabId);
+  if (!container) return;
+  container.innerHTML = items.map(item => `
+    <div class="card p-4 fade-in">
+      <div class="flex items-start justify-between mb-1">
+        <p class="text-sm font-medium text-slate-900">${item.title}</p>
+        <span class="text-xs text-slate-400">${item.date}</span>
+      </div>
+      ${item.source ? `<p class="text-xs text-slate-400 mb-1.5">${item.source}${item.context ? ' · ' + item.context : ''}</p>` : ''}
+      ${item.status ? `<span class="badge badge-blue mb-1.5">${item.status}</span>` : ''}
+      <p class="text-sm text-slate-600">${item.snippet}</p>
+      ${item.detail ? `<p class="text-sm text-slate-600">${item.detail}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('#detail-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(el => { el.style.display = 'none'; el.classList.remove('active'); });
+
+  const tabMap = { news:'tab-news', statements:'tab-statements', regulatory:'tab-regulatory', appointments:'tab-appointments' };
+  const targetId = tabMap[tab];
+  const target = document.getElementById(targetId);
+  if (target) { target.style.display = 'block'; target.classList.add('active'); }
+
+  // Highlight the correct button
+  const buttons = document.querySelectorAll('#detail-tabs .tab-btn');
+  const indices = { news:0, statements:1, regulatory:2, appointments:3 };
+  if (buttons[indices[tab]]) buttons[indices[tab]].classList.add('active');
+}
+
+function enrichStakeholder() {
+  const btn = document.getElementById('enrich-btn');
+  const status = document.getElementById('enrich-status');
+  if (!btn || !status) return;
+
+  btn.disabled = true;
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="spinner"></span> Enriching...';
+
+  setTimeout(() => {
+    status.textContent = '✓ Enrichment complete. 12 new data points added.';
+    status.className = 'text-xs text-green-600 ml-3';
+    btn.disabled = false;
+  }, 2000);
+}
+
+function renderAlertsGrid() {
+  const grid = document.getElementById('alerts-grid');
+  if (!grid) return;
+  grid.innerHTML = alerts.map(a => `
+    <div class="card p-5 fade-in">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <h3 class="font-semibold text-slate-900 text-sm">${a.name}</h3>
+          <div class="flex gap-1.5 mt-1.5">
+            <span class="badge ${channelBadgeClass(a.channel)}">${a.channel}</span>
+            <span class="badge ${freqBadgeClass(a.frequency)}">${a.frequency}</span>
+          </div>
+        </div>
+        <div class="toggle ${a.active ? 'active' : ''}" onclick="toggleAlert(${a.id}, this)"></div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        ${a.keywords.map(k => `<span class="pill text-xs">${k}</span>`).join('')}
+      </div>
+      <p class="text-xs text-slate-400">Last triggered: ${a.lastTriggered}</p>
+    </div>
+  `).join('');
+}
+
+function toggleAlert(id, el) {
+  const a = alerts.find(x => x.id === id);
+  if (a) a.active = !a.active;
+  el.classList.toggle('active');
+}
+
+// ── Init ───────────────────────────────────
+function init() {
+  // Login form
+  document.getElementById('login-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    if (email === 'demo@meridian.app' && password === 'demo1234') {
+      navigate('dashboard');
+      renderDashboard();
+    } else {
+      alert('Invalid credentials. Use demo@meridian.app / demo1234');
+    }
+  });
+
+  // Hash-based routing on load
+  function handleHash() {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash || hash === 'login') {
+      navigate('login');
+    } else if (hash === 'dashboard') {
+      navigate('dashboard');
+      renderDashboard();
+    } else if (hash === 'stakeholders') {
+      navigate('stakeholders');
+      renderStakeholdersList();
+    } else if (hash === 'alerts') {
+      navigate('alerts');
+      renderAlertsGrid();
+    } else if (hash === 'settings') {
+      navigate('settings');
+    } else {
+      navigate('dashboard');
+      renderDashboard();
+    }
+  }
+
+  window.addEventListener('hashchange', handleHash);
+  handleHash();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
