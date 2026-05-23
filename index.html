@@ -194,7 +194,7 @@
             <h1 class="text-2xl font-bold text-slate-900">Stakeholders</h1>
             <p class="text-sm text-slate-500 mt-0.5">5 stakeholders tracked across 5 jurisdictions</p>
           </div>
-          <button class="btn-primary" onclick="alert('Add stakeholder form would open here.')">+ Add Stakeholder</button>
+          <button class="btn-primary" onclick="openAddStakeholderModal()">+ Add Stakeholder</button>
         </div>
         <div class="mb-4">
           <input id="search-stakeholders" type="text" placeholder="Search stakeholders..." class="w-full max-w-sm px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" onkeyup="filterStakeholders()">
@@ -238,9 +238,9 @@
 
         <!-- Enrich button -->
         <div class="mb-5">
-          <button id="enrich-btn" class="btn-secondary flex items-center gap-2" onclick="enrichStakeholder()">
+          <button id="enrich-btn" class="btn-primary flex items-center gap-2" onclick="enrichStakeholder()">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            Enrich Data
+            Enrich with AI
           </button>
           <span id="enrich-status" class="text-xs text-slate-400 ml-3 hidden"></span>
         </div>
@@ -261,7 +261,7 @@
             <h1 class="text-2xl font-bold text-slate-900">Alerts</h1>
             <p class="text-sm text-slate-500 mt-0.5">Monitor changes across your stakeholders</p>
           </div>
-          <button class="btn-primary" onclick="alert('Create alert form would open here.')">+ Create Alert</button>
+          <button class="btn-primary" onclick="openCreateAlertModal()">+ Create Alert</button>
         </div>
         <div class="grid grid-cols-2 gap-4" id="alerts-grid"></div>
       </div>
@@ -387,8 +387,11 @@ function freqBadgeClass(freq) {
 // ── Routing ────────────────────────────────
 let currentPage = 'login';
 let currentDetailId = null;
+let _navigating = false;
 
 function navigate(page, data) {
+  if (_navigating) return;
+  _navigating = true;
   currentPage = page;
 
   // Login page is special
@@ -447,6 +450,7 @@ function navigate(page, data) {
 
   // Update hash
   window.location.hash = '#' + page;
+  _navigating = false;
 }
 
 function renderDashboard() {
@@ -621,6 +625,26 @@ function toggleAlert(id, el) {
   el.classList.toggle('active');
 }
 
+// ── Modals ─────────────────────────────────
+function openAddStakeholderModal() {
+  document.getElementById('add-stakeholder-form').reset();
+  document.getElementById('add-stakeholder-modal').classList.remove('hidden');
+  document.getElementById('add-stakeholder-modal').style.display = 'flex';
+}
+function closeAddStakeholderModal() {
+  document.getElementById('add-stakeholder-modal').classList.add('hidden');
+  document.getElementById('add-stakeholder-modal').style.display = 'none';
+}
+function openCreateAlertModal() {
+  document.getElementById('create-alert-form').reset();
+  document.getElementById('create-alert-modal').classList.remove('hidden');
+  document.getElementById('create-alert-modal').style.display = 'flex';
+}
+function closeCreateAlertModal() {
+  document.getElementById('create-alert-modal').classList.add('hidden');
+  document.getElementById('create-alert-modal').style.display = 'none';
+}
+
 // ── Init ───────────────────────────────────
 function init() {
   // Login form
@@ -634,6 +658,63 @@ function init() {
     } else {
       alert('Invalid credentials. Use demo@meridian.app / demo1234');
     }
+  });
+
+  // Add Stakeholder form
+  document.getElementById('add-stakeholder-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const juris = fd.get('jurisdiction');
+    const jurisMap = { AR: 'AR', BR: 'BR', CO: 'CO', MX: 'MX', US: 'US' };
+    const flagMap = { AR: '🇦🇷', BR: '🇧🇷', CO: '🇨🇴', MX: '🇲🇽', US: '🇺🇸' };
+    const countryMap = { AR: 'Argentina', BR: 'Brazil', CO: 'Colombia', MX: 'Mexico', US: 'USA' };
+    const maxId = stakeholders.reduce((m, s) => Math.max(m, s.id), 0);
+    const newStakeholder = {
+      id: maxId + 1,
+      name: fd.get('name'),
+      title: fd.get('title'),
+      org: fd.get('org'),
+      country: juris || 'US',
+      flag: juris ? (flagMap[juris] || '🇺🇸') : '🇺🇸',
+      stance: fd.get('stance') || 'Neutral',
+      status: 'Manual',
+      bio: fd.get('bio') || 'No bio provided.',
+      sectors: fd.get('sector') ? [fd.get('sector')] : ['General'],
+      enriched: false
+    };
+    stakeholders.push(newStakeholder);
+    closeAddStakeholderModal();
+    renderStakeholdersList();
+    renderDashboard();
+  });
+
+  // Create Alert form
+  document.getElementById('create-alert-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const keywordsRaw = fd.get('keywords') || '';
+    const maxId = alerts.reduce((m, a) => Math.max(m, a.id), 0);
+    const newAlert = {
+      id: maxId + 1,
+      name: fd.get('name'),
+      channel: fd.get('channel') || 'Slack',
+      frequency: fd.get('frequency') || 'Daily',
+      keywords: keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(Boolean) : ['general'],
+      active: true,
+      lastTriggered: 'Just now'
+    };
+    alerts.push(newAlert);
+    closeCreateAlertModal();
+    renderAlertsGrid();
+    renderDashboard();
+  });
+
+  // Modal backdrop clicks
+  document.getElementById('add-stakeholder-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddStakeholderModal();
+  });
+  document.getElementById('create-alert-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCreateAlertModal();
   });
 
   // Hash-based routing on load
@@ -652,6 +733,8 @@ function init() {
       renderAlertsGrid();
     } else if (hash === 'settings') {
       navigate('settings');
+    } else if (hash === 'stakeholder-detail') {
+      navigate('stakeholders');
     } else {
       navigate('dashboard');
       renderDashboard();
@@ -664,6 +747,136 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- Add Stakeholder Modal -->
+<div id="add-stakeholder-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background: rgba(15,23,42,0.5);">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 fade-in" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-slate-900">Add Stakeholder</h2>
+      <button class="text-slate-400 hover:text-slate-600" onclick="closeAddStakeholderModal()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="add-stakeholder-form" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Name *</label>
+          <input type="text" name="name" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" placeholder="Full name">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Title *</label>
+          <input type="text" name="title" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" placeholder="Job title">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Organization *</label>
+        <input type="text" name="org" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" placeholder="Organization name">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Jurisdiction</label>
+          <select name="jurisdiction" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none bg-white">
+            <option value="">Select...</option>
+            <option value="AR">Argentina</option>
+            <option value="BR">Brazil</option>
+            <option value="CO">Colombia</option>
+            <option value="MX">Mexico</option>
+            <option value="US">USA</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Sector</label>
+          <select name="sector" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none bg-white">
+            <option value="">Select...</option>
+            <option value="Crypto">Crypto</option>
+            <option value="Fintech">Fintech</option>
+            <option value="Pharma">Pharma</option>
+            <option value="Energy">Energy</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Bio</label>
+        <textarea name="bio" rows="3" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none resize-none" placeholder="Brief background..."></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Stance toward the industry</label>
+        <select name="stance" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none bg-white">
+          <option value="Supportive">Supportive</option>
+          <option value="Neutral">Neutral</option>
+          <option value="Hostile">Hostile</option>
+        </select>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" class="btn-secondary flex-1" onclick="closeAddStakeholderModal()">Cancel</button>
+        <button type="submit" class="btn-primary flex-1">Add Stakeholder</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Create Alert Modal -->
+<div id="create-alert-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background: rgba(15,23,42,0.5);">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6 fade-in" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-slate-900">Create Alert</h2>
+      <button class="text-slate-400 hover:text-slate-600" onclick="closeCreateAlertModal()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="create-alert-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Alert Name *</label>
+        <input type="text" name="name" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" placeholder="e.g. Argentina CBDC Watch">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Keywords</label>
+        <input type="text" name="keywords" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none" placeholder="Comma-separated, e.g. CBDC, digital peso, BCRA">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Scope</label>
+          <select name="scope" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none bg-white">
+            <option value="all">All Stakeholders</option>
+            <option value="1">María Elena García</option>
+            <option value="2">Carlos Mendes Silva</option>
+            <option value="3">Alejandra Ruiz</option>
+            <option value="4">Daniel Ortega</option>
+            <option value="5">Sarah Chen</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 mb-1">Frequency</label>
+          <select name="frequency" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none bg-white">
+            <option value="Realtime">Real-time</option>
+            <option value="Daily">Daily</option>
+            <option value="Weekly">Weekly</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Delivery Channel</label>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
+            <input type="radio" name="channel" value="Slack" checked class="accent-[#2563eb]"> Slack
+          </label>
+          <label class="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
+            <input type="radio" name="channel" value="Teams" class="accent-[#2563eb]"> Teams
+          </label>
+          <label class="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
+            <input type="radio" name="channel" value="Email" class="accent-[#2563eb]"> Email
+          </label>
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" class="btn-secondary flex-1" onclick="closeCreateAlertModal()">Cancel</button>
+        <button type="submit" class="btn-primary flex-1">Create Alert</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 </body>
 </html>
