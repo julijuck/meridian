@@ -736,7 +736,7 @@ function init() {
     } else if (hash === 'settings') {
       navigate('settings');
     } else if (hash === 'stakeholder-detail') {
-      navigate('stakeholders');
+      // Detail view already rendered by navigate() — don't re-route
     } else {
       navigate('dashboard');
       renderDashboard();
