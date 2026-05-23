@@ -403,6 +403,8 @@ function navigate(page, data) {
     loginPage.classList.add('active');
     appPage.style.display = 'none';
     appPage.classList.remove('active');
+    window.location.hash = '#login';
+    _navigating = false;
     return;
   }
 
