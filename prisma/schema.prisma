@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ---------- Multi-tenancy ----------
+
+model Organization {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+  plan  String @default("trial") // trial, pro, enterprise
+
+  users         User[]
+  stakeholders  Stakeholder[]
+  alerts        Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Users & Auth ----------
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  passwordHash   String
+  role           UserRole  @default(EDITOR)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Stakeholders ----------
+
+model Stakeholder {
+  id             String   @id @default(cuid())
+  name           String
+  title          String?
+  organization   String?
+  jurisdiction   String   // Country code: AR, BR, CO, MX, US
+  sectorTags     String   // JSON array stored as string
+  bio            String?
+  stanceOnCrypto String?  // supportive, neutral, hostile, unknown
+  source         String?  // "manual" or "ai_enriched"
+  organizationId String
+  org            Organization @relation(fields: [organizationId], references: [id])
+
+  enrichment Enrichment?
+  alerts     Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- AI Enrichment Data ----------
+
+model Enrichment {
+  id                 String   @id @default(cuid())
+  stakeholderId      String   @unique
+  stakeholder        Stakeholder @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
+  newsMentions       String   @default("[]") // JSON
+  publicStatements   String   @default("[]") // JSON
+  regulatoryPositions String  @default("[]") // JSON
+  recentAppointments String   @default("[]") // JSON
+  enrichedAt         DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Alerts ----------
+
+enum AlertChannel {
+  SLACK
+  TEAMS
+  EMAIL
+}
+
+enum AlertFrequency {
+  REALTIME
+  DAILY
+  WEEKLY
+}
+
+model Alert {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?
+  channel         AlertChannel   @default(SLACK)
+  frequency       AlertFrequency @default(DAILY)
+  webhookUrl      String?
+  isActive        Boolean        @default(true)
+  lastTriggeredAt DateTime?
+  stakeholderId   String?
+  stakeholder     Stakeholder?   @relation(fields: [stakeholderId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+
+  keywords  AlertKeyword[]
+  history   AlertHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AlertKeyword {
+  id      String @id @default(cuid())
+  alertId String
+  alert   Alert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  value   String // the keyword/phrase to monitor
+
+  createdAt DateTime @default(now())
+}
+
+model AlertHistory {
+  id       String   @id @default(cuid())
+  alertId  String
+  alert    Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  keyword  String
+  snippet  String
+  source   String
+  url      String
+  stakeholderId String?
+
+  matchedAt DateTime @default(now())
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // "create_stakeholder", "enrich_stakeholder", "trigger_alert", etc.
+  entityType String   // "stakeholder", "alert", "organization"
+  entityId   String
+  details    String?  // JSON
+  organizationId String
+
+  createdAt DateTime @default(now())
+}
